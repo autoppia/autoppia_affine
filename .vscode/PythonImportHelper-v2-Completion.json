@@ -1,0 +1,316 @@
+[
+    {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "FastAPI",
+        "importPath": "fastapi",
+        "description": "fastapi",
+        "isExtraImport": true,
+        "detail": "fastapi",
+        "documentation": {}
+    },
+    {
+        "label": "FastAPI",
+        "importPath": "fastapi",
+        "description": "fastapi",
+        "isExtraImport": true,
+        "detail": "fastapi",
+        "documentation": {}
+    },
+    {
+        "label": "HTTPException",
+        "importPath": "fastapi",
+        "description": "fastapi",
+        "isExtraImport": true,
+        "detail": "fastapi",
+        "documentation": {}
+    },
+    {
+        "label": "BaseModel",
+        "importPath": "pydantic",
+        "description": "pydantic",
+        "isExtraImport": true,
+        "detail": "pydantic",
+        "documentation": {}
+    },
+    {
+        "label": "BaseModel",
+        "importPath": "pydantic",
+        "description": "pydantic",
+        "isExtraImport": true,
+        "detail": "pydantic",
+        "documentation": {}
+    },
+    {
+        "label": "Field",
+        "importPath": "pydantic",
+        "description": "pydantic",
+        "isExtraImport": true,
+        "detail": "pydantic",
+        "documentation": {}
+    },
+    {
+        "label": "HttpUrl",
+        "importPath": "pydantic",
+        "description": "pydantic",
+        "isExtraImport": true,
+        "detail": "pydantic",
+        "documentation": {}
+    },
+    {
+        "label": "json",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "json",
+        "description": "json",
+        "detail": "json",
+        "documentation": {}
+    },
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "Path",
+        "importPath": "pathlib",
+        "description": "pathlib",
+        "isExtraImport": true,
+        "detail": "pathlib",
+        "documentation": {}
+    },
+    {
+        "label": "httpx",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "httpx",
+        "description": "httpx",
+        "detail": "httpx",
+        "documentation": {}
+    },
+    {
+        "label": "logger",
+        "importPath": "loguru",
+        "description": "loguru",
+        "isExtraImport": true,
+        "detail": "loguru",
+        "documentation": {}
+    },
+    {
+        "label": "autoppia_iwa",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "autoppia_iwa",
+        "description": "autoppia_iwa",
+        "detail": "autoppia_iwa",
+        "documentation": {}
+    },
+    {
+        "label": "Task",
+        "importPath": "autoppia_iwa.src.data_generation.tasks.classes",
+        "description": "autoppia_iwa.src.data_generation.tasks.classes",
+        "isExtraImport": true,
+        "detail": "autoppia_iwa.src.data_generation.tasks.classes",
+        "documentation": {}
+    },
+    {
+        "label": "NavigateAction",
+        "importPath": "autoppia_iwa.src.execution.actions.actions",
+        "description": "autoppia_iwa.src.execution.actions.actions",
+        "isExtraImport": true,
+        "detail": "autoppia_iwa.src.execution.actions.actions",
+        "documentation": {}
+    },
+    {
+        "label": "ScoreDetails",
+        "importPath": "autoppia_iwa.src.evaluation.stateful_evaluator",
+        "description": "autoppia_iwa.src.evaluation.stateful_evaluator",
+        "isExtraImport": true,
+        "detail": "autoppia_iwa.src.evaluation.stateful_evaluator",
+        "documentation": {}
+    },
+    {
+        "label": "StatefulEvaluator",
+        "importPath": "autoppia_iwa.src.evaluation.stateful_evaluator",
+        "description": "autoppia_iwa.src.evaluation.stateful_evaluator",
+        "isExtraImport": true,
+        "detail": "autoppia_iwa.src.evaluation.stateful_evaluator",
+        "documentation": {}
+    },
+    {
+        "label": "time",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "time",
+        "description": "time",
+        "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "ActRequest",
+        "kind": 6,
+        "importPath": "model.app",
+        "description": "model.app",
+        "peekOfCode": "class ActRequest(BaseModel):\n    task_id: str\n    step_index: int\n    snapshot_html: str\n    current_url: str\nclass ActResponse(BaseModel):\n    action_index: int | None = None\n    navigate_url: str | None = None\n    done: bool = False\n@app.get(\"/health\")",
+        "detail": "model.app",
+        "documentation": {}
+    },
+    {
+        "label": "ActResponse",
+        "kind": 6,
+        "importPath": "model.app",
+        "description": "model.app",
+        "peekOfCode": "class ActResponse(BaseModel):\n    action_index: int | None = None\n    navigate_url: str | None = None\n    done: bool = False\n@app.get(\"/health\")\ndef health() -> Dict[str, str]:\n    return {\"status\": \"ok\"}\n@app.post(\"/act\", response_model=ActResponse)\ndef act(req: ActRequest) -> ActResponse:\n    if req.step_index > 0:",
+        "detail": "model.app",
+        "documentation": {}
+    },
+    {
+        "label": "health",
+        "kind": 2,
+        "importPath": "model.app",
+        "description": "model.app",
+        "peekOfCode": "def health() -> Dict[str, str]:\n    return {\"status\": \"ok\"}\n@app.post(\"/act\", response_model=ActResponse)\ndef act(req: ActRequest) -> ActResponse:\n    if req.step_index > 0:\n        return ActResponse(action_index=None, navigate_url=None, done=True)\n    return ActResponse(\n        action_index=None,\n        navigate_url=\"http://84.247.180.192:8001/books/book-original-002?seed=36\",\n        done=True,",
+        "detail": "model.app",
+        "documentation": {}
+    },
+    {
+        "label": "act",
+        "kind": 2,
+        "importPath": "model.app",
+        "description": "model.app",
+        "peekOfCode": "def act(req: ActRequest) -> ActResponse:\n    if req.step_index > 0:\n        return ActResponse(action_index=None, navigate_url=None, done=True)\n    return ActResponse(\n        action_index=None,\n        navigate_url=\"http://84.247.180.192:8001/books/book-original-002?seed=36\",\n        done=True,\n    )\nif __name__ == \"__main__\":\n    import uvicorn",
+        "detail": "model.app",
+        "documentation": {}
+    },
+    {
+        "label": "app",
+        "kind": 5,
+        "importPath": "model.app",
+        "description": "model.app",
+        "peekOfCode": "app = FastAPI(title=\"Autoppia Affine FixedAutobooks Model\", version=\"0.1.0\")\nclass ActRequest(BaseModel):\n    task_id: str\n    step_index: int\n    snapshot_html: str\n    current_url: str\nclass ActResponse(BaseModel):\n    action_index: int | None = None\n    navigate_url: str | None = None\n    done: bool = False",
+        "detail": "model.app",
+        "documentation": {}
+    },
+    {
+        "label": "EvaluateRequest",
+        "kind": 6,
+        "importPath": "env",
+        "description": "env",
+        "peekOfCode": "class EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(..., description=\"Base URL of model /act API\")\n    max_steps: int | None = Field(\n        None,\n        description=\"Max environment steps per task (defaults to config).\",\n    )\nclass TaskEvaluationDetail(BaseModel):\n    task_id: str\n    project_id: str",
+        "detail": "env",
+        "documentation": {}
+    },
+    {
+        "label": "TaskEvaluationDetail",
+        "kind": 6,
+        "importPath": "env",
+        "description": "env",
+        "peekOfCode": "class TaskEvaluationDetail(BaseModel):\n    task_id: str\n    project_id: str\n    score: float\n    raw_score: float\n    success: bool\n    tests_passed: int\n    total_tests: int\n    steps: int\nclass EvaluateResponse(BaseModel):",
+        "detail": "env",
+        "documentation": {}
+    },
+    {
+        "label": "EvaluateResponse",
+        "kind": 6,
+        "importPath": "env",
+        "description": "env",
+        "peekOfCode": "class EvaluateResponse(BaseModel):\n    environment: str = \"autoppia_affine_env\"\n    total_score: float\n    success_rate: float\n    evaluated: int\n    details: List[TaskEvaluationDetail]\n# --------------------------------------------------------------------------- #\n# Helpers\n# --------------------------------------------------------------------------- #\ndef _load_autobooks_task() -> Task:",
+        "detail": "env",
+        "documentation": {}
+    },
+    {
+        "label": "app",
+        "kind": 5,
+        "importPath": "env",
+        "description": "env",
+        "peekOfCode": "app = FastAPI(title=\"Autoppia Affine Environment\", version=\"0.1.0\")\n# --------------------------------------------------------------------------- #\n# Environment wiring (minimal: only evaluator limits)\n# --------------------------------------------------------------------------- #\n_DEFAULT_MAX_STEPS = 30\ndef _get_default_max_steps() -> int:\n    \"\"\"\n    Resolve the default max_steps for evaluations.\n    Precedence:\n      1. AUTOPPIA_AFFINE_MAX_STEPS env var (must be positive int)",
+        "detail": "env",
+        "documentation": {}
+    },
+    {
+        "label": "_DEFAULT_MAX_STEPS",
+        "kind": 5,
+        "importPath": "env",
+        "description": "env",
+        "peekOfCode": "_DEFAULT_MAX_STEPS = 30\ndef _get_default_max_steps() -> int:\n    \"\"\"\n    Resolve the default max_steps for evaluations.\n    Precedence:\n      1. AUTOPPIA_AFFINE_MAX_STEPS env var (must be positive int)\n      2. Hard-coded default of 30\n    \"\"\"\n    raw = os.getenv(\"AUTOPPIA_AFFINE_MAX_STEPS\")\n    if not raw:",
+        "detail": "env",
+        "documentation": {}
+    },
+    {
+        "label": "_max_steps",
+        "kind": 5,
+        "importPath": "env",
+        "description": "env",
+        "peekOfCode": "_max_steps = _get_default_max_steps()\n# --------------------------------------------------------------------------- #\n# Models\n# --------------------------------------------------------------------------- #\nclass EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(..., description=\"Base URL of model /act API\")\n    max_steps: int | None = Field(\n        None,\n        description=\"Max environment steps per task (defaults to config).\",",
+        "detail": "env",
+        "documentation": {}
+    },
+    {
+        "label": "wait_for_health",
+        "kind": 2,
+        "importPath": "test_affine_env_with_miner",
+        "description": "test_affine_env_with_miner",
+        "peekOfCode": "def wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return\n        except Exception:\n            pass\n        time.sleep(1.0)",
+        "detail": "test_affine_env_with_miner",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "test_affine_env_with_miner",
+        "description": "test_affine_env_with_miner",
+        "peekOfCode": "def main() -> None:\n    env_url = \"http://localhost:8000\"\n    model_base_url_for_env = \"http://autoppia-affine-model:9000\"\n    print(f\"[test] Waiting for env at {env_url}/health\")\n    wait_for_health(f\"{env_url}/health\")\n    print(\"[test] Calling /evaluate on env, pointing to model /act endpoint\")\n    resp = httpx.post(\n        f\"{env_url}/evaluate\",\n        json={\n            \"model\": \"hardcoded-model\",",
+        "detail": "test_affine_env_with_miner",
+        "documentation": {}
+    }
+]

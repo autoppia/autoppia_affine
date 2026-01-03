@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build and run the Autoppia Affine environment container.
-
 IMAGE_NAME="autoppia-affine-env:latest"
 CONTAINER_NAME="autoppia-affine-env"
 NETWORK_NAME="autoppia-affine-net"
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "[env] Using build context root: ${ROOT_DIR}"
 cd "${ROOT_DIR}"
@@ -19,7 +17,7 @@ fi
 
 echo "[env] Building image ${IMAGE_NAME}"
 docker build \
-  -f autoppia_affine/affine/Dockerfile \
+  -f autoppia_affine/Dockerfile.env \
   -t "${IMAGE_NAME}" \
   "${ROOT_DIR}"
 
@@ -36,3 +34,4 @@ docker run -d \
   "${IMAGE_NAME}"
 
 echo "[env] Container running. Health check: curl http://localhost:8000/health"
+

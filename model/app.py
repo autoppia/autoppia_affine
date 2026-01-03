@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 
-app = FastAPI(title="Autoppia RL FixedAutobooks Miner", version="0.1.0")
+app = FastAPI(title="Autoppia Affine FixedAutobooks Model", version="0.1.0")
 
 
 class ActRequest(BaseModel):
@@ -17,7 +17,6 @@ class ActRequest(BaseModel):
 
 
 class ActResponse(BaseModel):
-    # Either a discrete PPO-style action index or a direct navigation URL.
     action_index: int | None = None
     navigate_url: str | None = None
     done: bool = False
@@ -30,17 +29,9 @@ def health() -> Dict[str, str]:
 
 @app.post("/act", response_model=ActResponse)
 def act(req: ActRequest) -> ActResponse:
-    """
-    FixedAutobooks-style hardcoded agent exposed as a miner.
-
-    It ignores the observation and, on the first step, returns a direct
-    NavigateAction URL to the known book-detail page. Subsequent calls
-    return done=True with no action.
-    """
     if req.step_index > 0:
         return ActResponse(action_index=None, navigate_url=None, done=True)
 
-    # First step: direct navigation to the known Autobooks URL.
     return ActResponse(
         action_index=None,
         navigate_url="http://84.247.180.192:8001/books/book-original-002?seed=36",

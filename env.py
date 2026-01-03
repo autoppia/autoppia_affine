@@ -53,8 +53,8 @@ _max_steps = _get_default_max_steps()
 
 
 class EvaluateRequest(BaseModel):
-    model: str = Field(..., description="Miner model identifier")
-    base_url: HttpUrl = Field(..., description="Base URL of miner /act API")
+    model: str = Field(..., description="Model identifier")
+    base_url: HttpUrl = Field(..., description="Base URL of model /act API")
     max_steps: int | None = Field(
         None,
         description="Max environment steps per task (defaults to config).",
@@ -93,16 +93,15 @@ def _load_autobooks_task() -> Task:
     so the Affine env can run without depending on that entrypoint module.
 
     Canonical location is inside this repo under:
-        data/tasks/autoppia_books_tasks.json
+        data/autoppia_books_tasks.json
 
     If that file is missing, we try to copy it once from the autoppia_iwa
     repo (either the installed package data tree or a sibling repo in the
     monorepo layout), so Docker images and local runs stay in sync.
     """
-    # Resolve this repo's root:
-    #   env.py -> affine_env -> src -> autoppia_rl (package) -> repo root
-    repo_root = Path(__file__).resolve().parents[4]
-    local_tasks_path = repo_root / "data" / "tasks" / "autoppia_books_tasks.json"
+    # Resolve this repo's root: env.py lives at the project root.
+    repo_root = Path(__file__).resolve().parent
+    local_tasks_path = repo_root / "data" / "autoppia_books_tasks.json"
 
     # Fast path: use the copy tracked in this repo if present.
     if local_tasks_path.exists():
@@ -127,13 +126,7 @@ def _load_autobooks_task() -> Task:
             pass
 
         # 2) Dev layouts / monorepo: sibling autoppia_iwa repo.
-        #    Support both `<root>/autoppia_iwa` and `<root>/codex/autoppia_iwa`
-        #    so this works in the monorepo on your laptop and in slimmer
-        #    Docker images.
-        dev_roots = [
-            repo_root.parent / "autoppia_iwa",
-            repo_root / "autoppia_iwa",
-        ]
+        dev_roots = [repo_root.parent / "autoppia_iwa"]
         for dev_root in dev_roots:
             candidates.append(
                 dev_root
@@ -153,7 +146,7 @@ def _load_autobooks_task() -> Task:
 
         if source_path is None:
             raise RuntimeError(
-                "Could not locate autoppia_books_tasks.json in autoppia_rl data/ "
+                "Could not locate autoppia_books_tasks.json in autoppia_affine data/ "
                 "or in installed/sibling autoppia_iwa."
             )
 
@@ -224,11 +217,11 @@ def _evaluate_task_with_remote_agent_sync(
                     url=str(navigate_url),
                 )
             else:
-                raise RuntimeError("Miner did not return navigate_url")
+                raise RuntimeError("Model did not return navigate_url")
 
             if base_action is None:
                 logger.info(
-                    "[AffineEnv] miner returned no action; stepping with NOOP",
+                    "[AffineEnv] model returned no action; stepping with NOOP",
                 )
                 step_result = evaluator.step(None)
             else:
