@@ -1,0 +1,26 @@
+{
+  "project_id": "autobooks",
+  "project_name": "Autoppia Books",
+  "timestamp": "2025-01-01T00:00:00",
+  "tasks": [
+    {
+      "id": "autobooks-demo-task-1",
+      "is_web_real": false,
+      "web_project_id": "autobooks",
+      "url": "/",
+      "prompt": "Open any book detail page in the Autoppia Books app and stop there.",
+      "tests": [
+        {
+          "type": "CheckEventTest",
+          "event_name": "BOOK_DETAIL",
+          "event_criteria": {},
+          "description": "Check that a book detail page was opened."
+        }
+      ],
+      "relevant_data": {
+        "note": "This is a hand-crafted task used only to verify the benchmark plumbing with a fixed agent."
+      }
+    }
+  ]
+}
+
