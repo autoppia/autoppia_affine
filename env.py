@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import json
 import os
-from pathlib import Path
 from typing import Dict, List
 
-import httpx
 from fastapi import FastAPI, HTTPException
 from loguru import logger
 from pydantic import BaseModel, Field, HttpUrl
 
-import autoppia_iwa  # type: ignore[import]
 from autoppia_iwa.src.data_generation.tasks.classes import Task
-from autoppia_iwa.src.execution.actions.actions import NavigateAction
+from autoppia_iwa.src.execution.actions.actions import BaseAction
 from autoppia_iwa.src.evaluation.stateful_evaluator import ScoreDetails, StatefulEvaluator
+from autoppia_iwa.src.web_agents.cua.apified_cua import ApifiedWebCUA
+from autoppia_affine.utils import load_autobooks_task
 
 
 app = FastAPI(title="Autoppia Affine Environment", version="0.1.0")
@@ -81,112 +79,27 @@ class EvaluateResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
-# Helpers
-# --------------------------------------------------------------------------- #
-
-
-def _load_autobooks_task() -> Task:
-    """
-    Load the single Autobooks demo task used by the fixed agent benchmark.
-
-    This mirrors entrypoints/evaluate_fixed_autobooks.py but is kept local
-    so the Affine env can run without depending on that entrypoint module.
-
-    Canonical location is inside this repo under:
-        data/autoppia_books_tasks.json
-
-    If that file is missing, we try to copy it once from the autoppia_iwa
-    repo (either the installed package data tree or a sibling repo in the
-    monorepo layout), so Docker images and local runs stay in sync.
-    """
-    # Resolve this repo's root: env.py lives at the project root.
-    repo_root = Path(__file__).resolve().parent
-    local_tasks_path = repo_root / "data" / "autoppia_books_tasks.json"
-
-    # Fast path: use the copy tracked in this repo if present.
-    if local_tasks_path.exists():
-        tasks_path = local_tasks_path
-    else:
-        candidates = []
-
-        # 1) Installed autoppia_iwa package layout (Docker / pip install).
-        try:
-            pkg_root = Path(autoppia_iwa.__file__).resolve().parent  # type: ignore[attr-defined]
-            repo_root_iwa = pkg_root.parent
-            candidates.append(
-                repo_root_iwa
-                / "data"
-                / "outputs"
-                / "benchmark"
-                / "cache"
-                / "tasks"
-                / "autoppia_books_tasks.json"
-            )
-        except Exception:
-            pass
-
-        # 2) Dev layouts / monorepo: sibling autoppia_iwa repo.
-        dev_roots = [repo_root.parent / "autoppia_iwa"]
-        for dev_root in dev_roots:
-            candidates.append(
-                dev_root
-                / "data"
-                / "outputs"
-                / "benchmark"
-                / "cache"
-                / "tasks"
-                / "autoppia_books_tasks.json"
-            )
-
-        source_path: Path | None = None
-        for cand in candidates:
-            if cand.exists():
-                source_path = cand
-                break
-
-        if source_path is None:
-            raise RuntimeError(
-                "Could not locate autoppia_books_tasks.json in autoppia_affine data/ "
-                "or in installed/sibling autoppia_iwa."
-            )
-
-        # Ensure local copy exists under data/tasks so the repo is self-contained.
-        try:
-            local_tasks_path.parent.mkdir(parents=True, exist_ok=True)
-            local_tasks_path.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
-        except Exception as exc:  # noqa: BLE001
-            raise RuntimeError(f"Failed to copy Autobooks tasks file to {local_tasks_path}: {exc}") from exc
-
-        tasks_path = local_tasks_path
-
-    data = json.loads(tasks_path.read_text(encoding="utf-8"))
-    tasks = data.get("tasks", [])
-    if len(tasks) != 1:
-        raise RuntimeError("Expected exactly one Autobooks benchmark task")
-    raw = tasks[0]
-
-    return Task(
-        id=raw["id"],
-        is_web_real=bool(raw.get("is_web_real", False)),
-        web_project_id=raw["web_project_id"],
-        url=raw["url"],
-        prompt=raw["prompt"],
-        tests=raw.get("tests", []),
-        relevant_data=raw.get("relevant_data", {}),
-    )
-
-
 def _evaluate_task_with_remote_agent_sync(
     task: Task,
-    base_url: str,
+    model_base_url: str,
     web_agent_name: str,
     max_steps: int,
 ) -> TaskEvaluationDetail:
-    # Use the same web_agent_id as the benchmark FixedAutobooksAgent wiring
-    # so backend events (e.g., BOOK_DETAIL) are tracked consistently.
-    evaluator = StatefulEvaluator(task=task, web_agent_id="1")
+    """
+    Drive a remote step-based model using StatefulEvaluator.
+
+    The model is expected to implement the ApifiedWebCUA /act contract and
+    return one or more BaseAction-compatible dicts per step:
+      - {"actions": [ {type: "...", ...}, ... ]}
+      - {"action": { ... }}
+      - {"navigate_url": "http://..."}  (converted to NavigateAction)
+    """
+    evaluator = StatefulEvaluator(task=task, web_agent_id=web_agent_name or "1")
     step_index = 0
     score = ScoreDetails()
+
+    # HTTP wrapper that knows how to call /act and parse actions.
+    agent = ApifiedWebCUA(base_url=model_base_url, name=web_agent_name or "affine-model", id=web_agent_name or "1")
 
     try:
         logger.info("[AffineEnv] reset evaluator for task %s", task.id)
@@ -196,28 +109,29 @@ def _evaluate_task_with_remote_agent_sync(
 
         done = False
 
-        session = httpx.Client(timeout=60.0)
-
         while step_index < max_steps and not done:
-            payload = {
-                "task_id": task.id,
-                "step_index": step_index,
-                "snapshot_html": snapshot.html,
-                "current_url": snapshot.url,
-            }
+            html = snapshot.html or ""
+            current_url = snapshot.url or task.url
 
-            resp = session.post(f"{base_url.rstrip('/')}/act", json=payload)
-            resp.raise_for_status()
-            resp_data = resp.json()
-
-            navigate_url = resp_data.get("navigate_url")
-            if navigate_url:
-                base_action = NavigateAction(
-                    type="NavigateAction",
-                    url=str(navigate_url),
+            try:
+                actions: List[BaseAction] = agent.act_sync(
+                    task=task,
+                    snapshot_html=html,
+                    url=current_url,
+                    step_index=step_index,
                 )
-            else:
-                raise RuntimeError("Model did not return navigate_url")
+            except Exception as exc:
+                logger.warning(
+                    "[AffineEnv] model /act failed at step %d for task %s: %s",
+                    step_index,
+                    task.id,
+                    exc,
+                )
+                actions = []
+
+            # Single-step semantics: execute at most one action per loop,
+            # mirroring autoppia_web_agents_subnet.stateful_cua_eval.
+            base_action: BaseAction | None = actions[0] if actions else None
 
             if base_action is None:
                 logger.info(
@@ -230,7 +144,7 @@ def _evaluate_task_with_remote_agent_sync(
             score = step_result.score
             snapshot = step_result.snapshot
 
-            done = bool(score.success or resp_data.get("done", False))
+            done = bool(score.success)
             step_index += 1
 
         logger.info(
@@ -252,10 +166,6 @@ def _evaluate_task_with_remote_agent_sync(
             steps=step_index,
         )
     finally:
-        try:
-            session.close()
-        except Exception:
-            pass
         evaluator.close()
 
 
@@ -284,7 +194,7 @@ async def evaluate(request: EvaluateRequest) -> EvaluateResponse:
 
     # TODO: generalise to multiple tasks; for now we use the single Autobooks task.
     try:
-        task = _load_autobooks_task()
+        task = load_autobooks_task()
     except Exception as exc:  # noqa: BLE001
         logger.exception("Failed to load Autobooks task")
         raise HTTPException(status_code=500, detail=str(exc)) from exc

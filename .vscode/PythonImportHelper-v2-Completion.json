@@ -24,6 +24,14 @@
         "documentation": {}
     },
     {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
         "label": "Dict",
         "importPath": "typing",
         "description": "typing",
@@ -104,38 +112,12 @@
         "documentation": {}
     },
     {
-        "label": "json",
-        "kind": 6,
-        "isExtraImport": true,
-        "importPath": "json",
-        "description": "json",
-        "detail": "json",
-        "documentation": {}
-    },
-    {
         "label": "os",
         "kind": 6,
         "isExtraImport": true,
         "importPath": "os",
         "description": "os",
         "detail": "os",
-        "documentation": {}
-    },
-    {
-        "label": "Path",
-        "importPath": "pathlib",
-        "description": "pathlib",
-        "isExtraImport": true,
-        "detail": "pathlib",
-        "documentation": {}
-    },
-    {
-        "label": "httpx",
-        "kind": 6,
-        "isExtraImport": true,
-        "importPath": "httpx",
-        "description": "httpx",
-        "detail": "httpx",
         "documentation": {}
     },
     {
@@ -147,12 +129,11 @@
         "documentation": {}
     },
     {
-        "label": "autoppia_iwa",
-        "kind": 6,
+        "label": "Task",
+        "importPath": "autoppia_iwa.src.data_generation.tasks.classes",
+        "description": "autoppia_iwa.src.data_generation.tasks.classes",
         "isExtraImport": true,
-        "importPath": "autoppia_iwa",
-        "description": "autoppia_iwa",
-        "detail": "autoppia_iwa",
+        "detail": "autoppia_iwa.src.data_generation.tasks.classes",
         "documentation": {}
     },
     {
@@ -164,7 +145,7 @@
         "documentation": {}
     },
     {
-        "label": "NavigateAction",
+        "label": "BaseAction",
         "importPath": "autoppia_iwa.src.execution.actions.actions",
         "description": "autoppia_iwa.src.execution.actions.actions",
         "isExtraImport": true,
@@ -188,12 +169,63 @@
         "documentation": {}
     },
     {
+        "label": "ApifiedWebCUA",
+        "importPath": "autoppia_iwa.src.web_agents.cua.apified_cua",
+        "description": "autoppia_iwa.src.web_agents.cua.apified_cua",
+        "isExtraImport": true,
+        "detail": "autoppia_iwa.src.web_agents.cua.apified_cua",
+        "documentation": {}
+    },
+    {
+        "label": "load_autobooks_task",
+        "importPath": "autoppia_affine.utils",
+        "description": "autoppia_affine.utils",
+        "isExtraImport": true,
+        "detail": "autoppia_affine.utils",
+        "documentation": {}
+    },
+    {
         "label": "time",
         "kind": 6,
         "isExtraImport": true,
         "importPath": "time",
         "description": "time",
         "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "httpx",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "httpx",
+        "description": "httpx",
+        "detail": "httpx",
+        "documentation": {}
+    },
+    {
+        "label": "json",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "json",
+        "description": "json",
+        "detail": "json",
+        "documentation": {}
+    },
+    {
+        "label": "Path",
+        "importPath": "pathlib",
+        "description": "pathlib",
+        "isExtraImport": true,
+        "detail": "pathlib",
+        "documentation": {}
+    },
+    {
+        "label": "autoppia_iwa",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "autoppia_iwa",
+        "description": "autoppia_iwa",
+        "detail": "autoppia_iwa",
         "documentation": {}
     },
     {
@@ -264,7 +296,7 @@
         "kind": 6,
         "importPath": "env",
         "description": "env",
-        "peekOfCode": "class EvaluateResponse(BaseModel):\n    environment: str = \"autoppia_affine_env\"\n    total_score: float\n    success_rate: float\n    evaluated: int\n    details: List[TaskEvaluationDetail]\n# --------------------------------------------------------------------------- #\n# Helpers\n# --------------------------------------------------------------------------- #\ndef _load_autobooks_task() -> Task:",
+        "peekOfCode": "class EvaluateResponse(BaseModel):\n    environment: str = \"autoppia_affine_env\"\n    total_score: float\n    success_rate: float\n    evaluated: int\n    details: List[TaskEvaluationDetail]\n# --------------------------------------------------------------------------- #\ndef _evaluate_task_with_remote_agent_sync(\n    task: Task,\n    model_base_url: str,",
         "detail": "env",
         "documentation": {}
     },
@@ -311,6 +343,15 @@
         "description": "test_affine_env_with_miner",
         "peekOfCode": "def main() -> None:\n    env_url = \"http://localhost:8000\"\n    model_base_url_for_env = \"http://autoppia-affine-model:9000\"\n    print(f\"[test] Waiting for env at {env_url}/health\")\n    wait_for_health(f\"{env_url}/health\")\n    print(\"[test] Calling /evaluate on env, pointing to model /act endpoint\")\n    resp = httpx.post(\n        f\"{env_url}/evaluate\",\n        json={\n            \"model\": \"hardcoded-model\",",
         "detail": "test_affine_env_with_miner",
+        "documentation": {}
+    },
+    {
+        "label": "load_autobooks_task",
+        "kind": 2,
+        "importPath": "utils",
+        "description": "utils",
+        "peekOfCode": "def load_autobooks_task() -> Task:\n    \"\"\"\n    Load the single Autobooks demo task used by the fixed agent benchmark.\n    Canonical location is inside this repo under:\n        data/autoppia_books_tasks.json\n    If that file is missing, we try to copy it once from the autoppia_iwa\n    repo (either the installed package data tree or a sibling repo in the\n    monorepo layout), so Docker images and local runs stay in sync.\n    \"\"\"\n    repo_root = Path(__file__).resolve().parent",
+        "detail": "utils",
         "documentation": {}
     }
 ]
