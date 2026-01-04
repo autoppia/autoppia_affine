@@ -111,3 +111,35 @@ bash deploy.sh
 #   3) Local smoke test (talks to http://localhost:8002)
 #      python test_affine_env_with_miner.py
 ```
+
+## Testing with Affinetes (URL mode)
+
+To verify that this environment is compatible with Affinetes:
+
+1. Make sure Affinetes is installed in your local Python env, for example:
+
+```bash
+cd ../affinetes
+pip install -e .
+```
+
+2. Start the env + model as usual:
+
+```bash
+cd autoppia_affine
+bash deploy.sh
+```
+
+3. Run the Affinetes URL‑mode test from `autoppia_affine`:
+
+```bash
+python test_affinetes_iwa_env.py
+```
+
+This script:
+
+- Connects to `http://localhost:8002` using `affinetes.load_env(mode="url", base_url=...)`.
+- Calls `env.evaluate(...)` twice:
+  - Once on `autobooks-demo-task-1` (expects score 1.0).
+  - Once on `autobooks-demo-task-2-invalid` (expects score 0.0).
+- Prints green checks if both scores match expectations, confirming that the Autoppia IWA env works correctly as an Affinetes URL‑mode environment.

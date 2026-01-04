@@ -32,6 +32,14 @@
         "documentation": {}
     },
     {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
         "label": "Dict",
         "importPath": "typing",
         "description": "typing",
@@ -211,6 +219,15 @@
         "documentation": {}
     },
     {
+        "label": "asyncio",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "asyncio",
+        "description": "asyncio",
+        "detail": "asyncio",
+        "documentation": {}
+    },
+    {
         "label": "json",
         "kind": 6,
         "isExtraImport": true,
@@ -378,6 +395,42 @@
         "description": "test_affine_env_with_miner",
         "peekOfCode": "RESET = \"\\033[0m\"\ndef wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return\n        except Exception:\n            pass",
         "detail": "test_affine_env_with_miner",
+        "documentation": {}
+    },
+    {
+        "label": "wait_for_health",
+        "kind": 2,
+        "importPath": "test_affinetes_iwa_env",
+        "description": "test_affinetes_iwa_env",
+        "peekOfCode": "def wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return\n        except Exception:\n            pass\n        time.sleep(1.0)",
+        "detail": "test_affinetes_iwa_env",
+        "documentation": {}
+    },
+    {
+        "label": "GREEN",
+        "kind": 5,
+        "importPath": "test_affinetes_iwa_env",
+        "description": "test_affinetes_iwa_env",
+        "peekOfCode": "GREEN = \"\\033[92m\"\nRED = \"\\033[91m\"\nRESET = \"\\033[0m\"\ndef wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return",
+        "detail": "test_affinetes_iwa_env",
+        "documentation": {}
+    },
+    {
+        "label": "RED",
+        "kind": 5,
+        "importPath": "test_affinetes_iwa_env",
+        "description": "test_affinetes_iwa_env",
+        "peekOfCode": "RED = \"\\033[91m\"\nRESET = \"\\033[0m\"\ndef wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return\n        except Exception:",
+        "detail": "test_affinetes_iwa_env",
+        "documentation": {}
+    },
+    {
+        "label": "RESET",
+        "kind": 5,
+        "importPath": "test_affinetes_iwa_env",
+        "description": "test_affinetes_iwa_env",
+        "peekOfCode": "RESET = \"\\033[0m\"\ndef wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return\n        except Exception:\n            pass",
+        "detail": "test_affinetes_iwa_env",
         "documentation": {}
     },
     {
