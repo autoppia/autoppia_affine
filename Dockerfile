@@ -32,14 +32,23 @@ RUN apt-get update && \
         libasound2 && \
     rm -rf /var/lib/apt/lists/*
 
+# Build context is the monorepo root
+# Copy the local autoppia_iwa repo and the affine env code
+COPY autoppia_iwa /app/autoppia_iwa
 COPY autoppia_affine/env.py /app/env.py
+COPY autoppia_affine/utils.py /app/utils.py
 COPY autoppia_affine/data/autoppia_books_tasks.json /app/data/autoppia_books_tasks.json
 
+# Install dependencies from autoppia_iwa plus FastAPI and uvicorn,
+# and force the evaluator to run headless by overriding the autoppia_iwa .env.
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir "autoppia_iwa @ git+https://github.com/autoppia/autoppia_iwa.git@main" fastapi uvicorn httpx loguru && \
-    playwright install chromium
+    pip install --no-cache-dir -r /app/autoppia_iwa/requirements.txt fastapi uvicorn loguru && \
+    playwright install chromium && \
+    printf 'EVALUATOR_HEADLESS=true\n' > /app/autoppia_iwa/.env
 
-ENV PYTHONPATH=/app \
+# Make the local autoppia_iwa repo importable.
+# Point demo webs endpoint at the Autobooks frontend host:port used in the task.
+ENV PYTHONPATH=/app/autoppia_iwa \
     DEMO_WEBS_ENDPOINT="http://84.247.180.192" \
     DEMO_WEBS_STARTING_PORT=8000 \
     DEMO_WEB_SERVICE_PORT=8090 \

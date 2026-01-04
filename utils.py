@@ -7,9 +7,9 @@ import autoppia_iwa  # type: ignore[import]
 from autoppia_iwa.src.data_generation.tasks.classes import Task
 
 
-def load_autobooks_task() -> Task:
+def _resolve_autobooks_tasks_path() -> Path:
     """
-    Load the single Autobooks demo task used by the fixed agent benchmark.
+    Resolve the path to the Autobooks tasks JSON file, copying it locally if needed.
 
     Canonical location is inside this repo under:
         data/autoppia_books_tasks.json
@@ -24,7 +24,7 @@ def load_autobooks_task() -> Task:
     if local_tasks_path.exists():
         tasks_path = local_tasks_path
     else:
-        candidates = []
+        candidates: list[Path] = []
 
         # 1) Installed autoppia_iwa package layout (Docker / pip install).
         try:
@@ -68,25 +68,57 @@ def load_autobooks_task() -> Task:
 
         try:
             local_tasks_path.parent.mkdir(parents=True, exist_ok=True)
-            local_tasks_path.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
+            local_tasks_path.write_text(
+                source_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
         except Exception as exc:  # noqa: BLE001
-            raise RuntimeError(f"Failed to copy Autobooks tasks file to {local_tasks_path}: {exc}") from exc
+            raise RuntimeError(
+                f"Failed to copy Autobooks tasks file to {local_tasks_path}: {exc}",
+            ) from exc
 
         tasks_path = local_tasks_path
 
-    data = json.loads(tasks_path.read_text(encoding="utf-8"))
-    tasks = data.get("tasks", [])
-    if len(tasks) != 1:
-        raise RuntimeError("Expected exactly one Autobooks benchmark task")
-    raw = tasks[0]
+    return tasks_path
 
-    return Task(
-        id=raw["id"],
-        is_web_real=bool(raw.get("is_web_real", False)),
-        web_project_id=raw["web_project_id"],
-        url=raw["url"],
-        prompt=raw["prompt"],
-        tests=raw.get("tests", []),
-        relevant_data=raw.get("relevant_data", {}),
-    )
+
+def load_autobooks_tasks() -> list[Task]:
+    """
+    Load all Autobooks demo tasks defined in the local JSON file.
+
+    This now supports multiple tasks so that different task IDs can be
+    evaluated independently (e.g. one that the fixed model solves, and
+    another that it does not).
+    """
+    tasks_path = _resolve_autobooks_tasks_path()
+    data = json.loads(tasks_path.read_text(encoding="utf-8"))
+    raw_tasks = data.get("tasks", [])
+    if not raw_tasks:
+        raise RuntimeError("No Autobooks benchmark tasks found in JSON")
+
+    tasks: list[Task] = []
+    for raw in raw_tasks:
+        tasks.append(
+            Task(
+                id=raw["id"],
+                is_web_real=bool(raw.get("is_web_real", False)),
+                web_project_id=raw["web_project_id"],
+                url=raw["url"],
+                prompt=raw["prompt"],
+                tests=raw.get("tests", []),
+                relevant_data=raw.get("relevant_data", {}),
+            )
+        )
+    return tasks
+
+
+def load_autobooks_task() -> Task:
+    """
+    Backwards-compatible helper returning the first Autobooks task.
+
+    Prefer using load_autobooks_tasks() when you need explicit control
+    over which task(s) are evaluated.
+    """
+    tasks = load_autobooks_tasks()
+    return tasks[0]
 

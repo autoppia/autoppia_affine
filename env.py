@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import Dict, List
 
+import httpx
 from fastapi import FastAPI, HTTPException
 from loguru import logger
 from pydantic import BaseModel, Field, HttpUrl
@@ -10,8 +11,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from autoppia_iwa.src.data_generation.tasks.classes import Task
 from autoppia_iwa.src.execution.actions.actions import BaseAction
 from autoppia_iwa.src.evaluation.stateful_evaluator import ScoreDetails, StatefulEvaluator
-from autoppia_iwa.src.web_agents.cua.apified_cua import ApifiedWebCUA
-from autoppia_affine.utils import load_autobooks_task
+from utils import load_autobooks_tasks
 
 
 app = FastAPI(title="Autoppia Affine Environment", version="0.1.0")
@@ -53,6 +53,10 @@ _max_steps = _get_default_max_steps()
 class EvaluateRequest(BaseModel):
     model: str = Field(..., description="Model identifier")
     base_url: HttpUrl = Field(..., description="Base URL of model /act API")
+    task_id: str | None = Field(
+        default=None,
+        description="If set, evaluate only this task id.",
+    )
     max_steps: int | None = Field(
         None,
         description="Max environment steps per task (defaults to config).",
@@ -88,18 +92,19 @@ def _evaluate_task_with_remote_agent_sync(
     """
     Drive a remote step-based model using StatefulEvaluator.
 
-    The model is expected to implement the ApifiedWebCUA /act contract and
-    return one or more BaseAction-compatible dicts per step:
-      - {"actions": [ {type: "...", ...}, ... ]}
-      - {"action": { ... }}
-      - {"navigate_url": "http://..."}  (converted to NavigateAction)
+    The model is expected to implement the same JSON contract used by
+    ApifiedWebCUA /act:
+      - {"actions": [ { "type": "...Action", ... }, ... ]}
+
+    We use a fixed web_agent_id so backend events (e.g., BOOK_DETAIL) are
+    grouped consistently in the demo webs service, mirroring the
+    FixedAutobooksAgent wiring.
     """
-    evaluator = StatefulEvaluator(task=task, web_agent_id=web_agent_name or "1")
+    evaluator = StatefulEvaluator(task=task, web_agent_id="1")
     step_index = 0
     score = ScoreDetails()
 
-    # HTTP wrapper that knows how to call /act and parse actions.
-    agent = ApifiedWebCUA(base_url=model_base_url, name=web_agent_name or "affine-model", id=web_agent_name or "1")
+    session = httpx.Client(timeout=60.0)
 
     try:
         logger.info("[AffineEnv] reset evaluator for task %s", task.id)
@@ -110,16 +115,19 @@ def _evaluate_task_with_remote_agent_sync(
         done = False
 
         while step_index < max_steps and not done:
-            html = snapshot.html or ""
-            current_url = snapshot.url or task.url
+            payload = {
+                "task_id": task.id,
+                "prompt": getattr(task, "prompt", None),
+                "url": snapshot.url or task.url,
+                "snapshot_html": snapshot.html or "",
+                "step_index": step_index,
+                "web_project_id": getattr(task, "web_project_id", None),
+            }
 
             try:
-                actions: List[BaseAction] = agent.act_sync(
-                    task=task,
-                    snapshot_html=html,
-                    url=current_url,
-                    step_index=step_index,
-                )
+                resp = session.post(f"{model_base_url.rstrip('/')}/act", json=payload)
+                resp.raise_for_status()
+                resp_data = resp.json()
             except Exception as exc:
                 logger.warning(
                     "[AffineEnv] model /act failed at step %d for task %s: %s",
@@ -127,10 +135,19 @@ def _evaluate_task_with_remote_agent_sync(
                     task.id,
                     exc,
                 )
-                actions = []
+                resp_data = {}
 
-            # Single-step semantics: execute at most one action per loop,
-            # mirroring autoppia_web_agents_subnet.stateful_cua_eval.
+            raw_actions = resp_data.get("actions") or []
+            actions: List[BaseAction] = []
+            for raw in raw_actions:
+                if not isinstance(raw, dict):
+                    continue
+                try:
+                    actions.append(BaseAction.create_action(raw))
+                except Exception as exc:
+                    logger.warning("[AffineEnv] failed to parse action %s: %s", raw, exc)
+                    continue
+
             base_action: BaseAction | None = actions[0] if actions else None
 
             if base_action is None:
@@ -166,6 +183,10 @@ def _evaluate_task_with_remote_agent_sync(
             steps=step_index,
         )
     finally:
+        try:
+            session.close()
+        except Exception:
+            pass
         evaluator.close()
 
 
@@ -192,28 +213,43 @@ async def evaluate(request: EvaluateRequest) -> EvaluateResponse:
         raise HTTPException(
             status_code=400, detail="max_steps must be positive")
 
-    # TODO: generalise to multiple tasks; for now we use the single Autobooks task.
     try:
-        task = load_autobooks_task()
+        tasks = load_autobooks_tasks()
     except Exception as exc:  # noqa: BLE001
         logger.exception("Failed to load Autobooks task")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-    # Run the evaluator + miner loop in a worker thread so that the
+
+    if not tasks:
+        raise HTTPException(status_code=500, detail="No tasks available for evaluation")
+
+    # Optional filtering by task_id so tests can request specific tasks.
+    if request.task_id is not None:
+        filtered = [t for t in tasks if t.id == request.task_id]
+        if not filtered:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Task with id={request.task_id} not found",
+            )
+        tasks = filtered
+
+    # Run the evaluator + model loop in a worker thread so that the
     # internal event loop used by StatefulEvaluator does not conflict
     # with the FastAPI/uvicorn asyncio loop.
     import asyncio
 
     loop = asyncio.get_running_loop()
-    detail = await loop.run_in_executor(
-        None,
-        _evaluate_task_with_remote_agent_sync,
-        task,
-        str(request.base_url),
-        request.model,
-        max_steps,
-    )
+    details: List[TaskEvaluationDetail] = []
+    for task in tasks:
+        detail = await loop.run_in_executor(
+            None,
+            _evaluate_task_with_remote_agent_sync,
+            task,
+            str(request.base_url),
+            request.model,
+            max_steps,
+        )
+        details.append(detail)
 
-    details = [detail]
     total_score = sum(d.score for d in details)
     success_rate = (
         sum(1 for d in details if d.success) / len(details) if details else 0.0

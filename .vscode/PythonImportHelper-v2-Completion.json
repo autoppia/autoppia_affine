@@ -40,6 +40,22 @@
         "documentation": {}
     },
     {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "Dict",
         "importPath": "typing",
         "description": "typing",
@@ -121,6 +137,15 @@
         "documentation": {}
     },
     {
+        "label": "httpx",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "httpx",
+        "description": "httpx",
+        "detail": "httpx",
+        "documentation": {}
+    },
+    {
         "label": "logger",
         "importPath": "loguru",
         "description": "loguru",
@@ -169,19 +194,11 @@
         "documentation": {}
     },
     {
-        "label": "ApifiedWebCUA",
-        "importPath": "autoppia_iwa.src.web_agents.cua.apified_cua",
-        "description": "autoppia_iwa.src.web_agents.cua.apified_cua",
+        "label": "load_autobooks_tasks",
+        "importPath": "utils",
+        "description": "utils",
         "isExtraImport": true,
-        "detail": "autoppia_iwa.src.web_agents.cua.apified_cua",
-        "documentation": {}
-    },
-    {
-        "label": "load_autobooks_task",
-        "importPath": "autoppia_affine.utils",
-        "description": "autoppia_affine.utils",
-        "isExtraImport": true,
-        "detail": "autoppia_affine.utils",
+        "detail": "utils",
         "documentation": {}
     },
     {
@@ -191,15 +208,6 @@
         "importPath": "time",
         "description": "time",
         "detail": "time",
-        "documentation": {}
-    },
-    {
-        "label": "httpx",
-        "kind": 6,
-        "isExtraImport": true,
-        "importPath": "httpx",
-        "description": "httpx",
-        "detail": "httpx",
         "documentation": {}
     },
     {
@@ -233,7 +241,7 @@
         "kind": 6,
         "importPath": "model.app",
         "description": "model.app",
-        "peekOfCode": "class ActRequest(BaseModel):\n    task_id: str\n    step_index: int\n    snapshot_html: str\n    current_url: str\nclass ActResponse(BaseModel):\n    action_index: int | None = None\n    navigate_url: str | None = None\n    done: bool = False\n@app.get(\"/health\")",
+        "peekOfCode": "class ActRequest(BaseModel):\n    task_id: str | None = None\n    prompt: str | None = None\n    url: str | None = None\n    snapshot_html: str\n    step_index: int\n    web_project_id: str | None = None\n    history: List[Dict[str, Any]] | None = None\nclass ActResponse(BaseModel):\n    actions: List[Dict[str, Any]] | None = None",
         "detail": "model.app",
         "documentation": {}
     },
@@ -242,7 +250,7 @@
         "kind": 6,
         "importPath": "model.app",
         "description": "model.app",
-        "peekOfCode": "class ActResponse(BaseModel):\n    action_index: int | None = None\n    navigate_url: str | None = None\n    done: bool = False\n@app.get(\"/health\")\ndef health() -> Dict[str, str]:\n    return {\"status\": \"ok\"}\n@app.post(\"/act\", response_model=ActResponse)\ndef act(req: ActRequest) -> ActResponse:\n    if req.step_index > 0:",
+        "peekOfCode": "class ActResponse(BaseModel):\n    actions: List[Dict[str, Any]] | None = None\n    done: bool = False\n@app.get(\"/health\")\ndef health() -> Dict[str, str]:\n    return {\"status\": \"ok\"}\n@app.post(\"/act\", response_model=ActResponse)\ndef act(req: ActRequest) -> ActResponse:\n    # Single-step fixed agent: on the first step, return a NavigateAction that\n    # goes directly to a known book detail page. Subsequent calls return no actions.",
         "detail": "model.app",
         "documentation": {}
     },
@@ -251,7 +259,7 @@
         "kind": 2,
         "importPath": "model.app",
         "description": "model.app",
-        "peekOfCode": "def health() -> Dict[str, str]:\n    return {\"status\": \"ok\"}\n@app.post(\"/act\", response_model=ActResponse)\ndef act(req: ActRequest) -> ActResponse:\n    if req.step_index > 0:\n        return ActResponse(action_index=None, navigate_url=None, done=True)\n    return ActResponse(\n        action_index=None,\n        navigate_url=\"http://84.247.180.192:8001/books/book-original-002?seed=36\",\n        done=True,",
+        "peekOfCode": "def health() -> Dict[str, str]:\n    return {\"status\": \"ok\"}\n@app.post(\"/act\", response_model=ActResponse)\ndef act(req: ActRequest) -> ActResponse:\n    # Single-step fixed agent: on the first step, return a NavigateAction that\n    # goes directly to a known book detail page. Subsequent calls return no actions.\n    if req.step_index > 0:\n        return ActResponse(actions=[], done=True)\n    return ActResponse(\n        actions=[",
         "detail": "model.app",
         "documentation": {}
     },
@@ -260,7 +268,7 @@
         "kind": 2,
         "importPath": "model.app",
         "description": "model.app",
-        "peekOfCode": "def act(req: ActRequest) -> ActResponse:\n    if req.step_index > 0:\n        return ActResponse(action_index=None, navigate_url=None, done=True)\n    return ActResponse(\n        action_index=None,\n        navigate_url=\"http://84.247.180.192:8001/books/book-original-002?seed=36\",\n        done=True,\n    )\nif __name__ == \"__main__\":\n    import uvicorn",
+        "peekOfCode": "def act(req: ActRequest) -> ActResponse:\n    # Single-step fixed agent: on the first step, return a NavigateAction that\n    # goes directly to a known book detail page. Subsequent calls return no actions.\n    if req.step_index > 0:\n        return ActResponse(actions=[], done=True)\n    return ActResponse(\n        actions=[\n            {\n                \"type\": \"NavigateAction\",\n                \"url\": \"http://84.247.180.192:8001/books/book-original-002?seed=36\",",
         "detail": "model.app",
         "documentation": {}
     },
@@ -269,7 +277,7 @@
         "kind": 5,
         "importPath": "model.app",
         "description": "model.app",
-        "peekOfCode": "app = FastAPI(title=\"Autoppia Affine FixedAutobooks Model\", version=\"0.1.0\")\nclass ActRequest(BaseModel):\n    task_id: str\n    step_index: int\n    snapshot_html: str\n    current_url: str\nclass ActResponse(BaseModel):\n    action_index: int | None = None\n    navigate_url: str | None = None\n    done: bool = False",
+        "peekOfCode": "app = FastAPI(title=\"Autoppia Affine FixedAutobooks Model\", version=\"0.1.0\")\nclass ActRequest(BaseModel):\n    task_id: str | None = None\n    prompt: str | None = None\n    url: str | None = None\n    snapshot_html: str\n    step_index: int\n    web_project_id: str | None = None\n    history: List[Dict[str, Any]] | None = None\nclass ActResponse(BaseModel):",
         "detail": "model.app",
         "documentation": {}
     },
@@ -278,7 +286,7 @@
         "kind": 6,
         "importPath": "env",
         "description": "env",
-        "peekOfCode": "class EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(..., description=\"Base URL of model /act API\")\n    max_steps: int | None = Field(\n        None,\n        description=\"Max environment steps per task (defaults to config).\",\n    )\nclass TaskEvaluationDetail(BaseModel):\n    task_id: str\n    project_id: str",
+        "peekOfCode": "class EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(..., description=\"Base URL of model /act API\")\n    task_id: str | None = Field(\n        default=None,\n        description=\"If set, evaluate only this task id.\",\n    )\n    max_steps: int | None = Field(\n        None,\n        description=\"Max environment steps per task (defaults to config).\",",
         "detail": "env",
         "documentation": {}
     },
@@ -323,7 +331,7 @@
         "kind": 5,
         "importPath": "env",
         "description": "env",
-        "peekOfCode": "_max_steps = _get_default_max_steps()\n# --------------------------------------------------------------------------- #\n# Models\n# --------------------------------------------------------------------------- #\nclass EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(..., description=\"Base URL of model /act API\")\n    max_steps: int | None = Field(\n        None,\n        description=\"Max environment steps per task (defaults to config).\",",
+        "peekOfCode": "_max_steps = _get_default_max_steps()\n# --------------------------------------------------------------------------- #\n# Models\n# --------------------------------------------------------------------------- #\nclass EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(..., description=\"Base URL of model /act API\")\n    task_id: str | None = Field(\n        default=None,\n        description=\"If set, evaluate only this task id.\",",
         "detail": "env",
         "documentation": {}
     },
@@ -341,8 +349,44 @@
         "kind": 2,
         "importPath": "test_affine_env_with_miner",
         "description": "test_affine_env_with_miner",
-        "peekOfCode": "def main() -> None:\n    env_url = \"http://localhost:8000\"\n    model_base_url_for_env = \"http://autoppia-affine-model:9000\"\n    print(f\"[test] Waiting for env at {env_url}/health\")\n    wait_for_health(f\"{env_url}/health\")\n    print(\"[test] Calling /evaluate on env, pointing to model /act endpoint\")\n    resp = httpx.post(\n        f\"{env_url}/evaluate\",\n        json={\n            \"model\": \"hardcoded-model\",",
+        "peekOfCode": "def main() -> None:\n    env_url = \"http://localhost:8002\"\n    model_base_url_for_env = \"http://autoppia-affine-model:9000\"\n    print(f\"[test] Waiting for env at {env_url}/health\")\n    wait_for_health(f\"{env_url}/health\")\n    def run_eval(task_id: str) -> dict:\n        print(f\"[test] Calling /evaluate for task_id={task_id}\")\n        resp = httpx.post(\n            f\"{env_url}/evaluate\",\n            json={",
         "detail": "test_affine_env_with_miner",
+        "documentation": {}
+    },
+    {
+        "label": "GREEN",
+        "kind": 5,
+        "importPath": "test_affine_env_with_miner",
+        "description": "test_affine_env_with_miner",
+        "peekOfCode": "GREEN = \"\\033[92m\"\nRED = \"\\033[91m\"\nRESET = \"\\033[0m\"\ndef wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return",
+        "detail": "test_affine_env_with_miner",
+        "documentation": {}
+    },
+    {
+        "label": "RED",
+        "kind": 5,
+        "importPath": "test_affine_env_with_miner",
+        "description": "test_affine_env_with_miner",
+        "peekOfCode": "RED = \"\\033[91m\"\nRESET = \"\\033[0m\"\ndef wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return\n        except Exception:",
+        "detail": "test_affine_env_with_miner",
+        "documentation": {}
+    },
+    {
+        "label": "RESET",
+        "kind": 5,
+        "importPath": "test_affine_env_with_miner",
+        "description": "test_affine_env_with_miner",
+        "peekOfCode": "RESET = \"\\033[0m\"\ndef wait_for_health(url: str, timeout_s: float = 60.0) -> None:\n    start = time.time()\n    while time.time() - start < timeout_s:\n        try:\n            r = httpx.get(url, timeout=5.0)\n            if r.status_code == 200:\n                return\n        except Exception:\n            pass",
+        "detail": "test_affine_env_with_miner",
+        "documentation": {}
+    },
+    {
+        "label": "load_autobooks_tasks",
+        "kind": 2,
+        "importPath": "utils",
+        "description": "utils",
+        "peekOfCode": "def load_autobooks_tasks() -> list[Task]:\n    \"\"\"\n    Load all Autobooks demo tasks defined in the local JSON file.\n    This now supports multiple tasks so that different task IDs can be\n    evaluated independently (e.g. one that the fixed model solves, and\n    another that it does not).\n    \"\"\"\n    tasks_path = _resolve_autobooks_tasks_path()\n    data = json.loads(tasks_path.read_text(encoding=\"utf-8\"))\n    raw_tasks = data.get(\"tasks\", [])",
+        "detail": "utils",
         "documentation": {}
     },
     {
@@ -350,7 +394,7 @@
         "kind": 2,
         "importPath": "utils",
         "description": "utils",
-        "peekOfCode": "def load_autobooks_task() -> Task:\n    \"\"\"\n    Load the single Autobooks demo task used by the fixed agent benchmark.\n    Canonical location is inside this repo under:\n        data/autoppia_books_tasks.json\n    If that file is missing, we try to copy it once from the autoppia_iwa\n    repo (either the installed package data tree or a sibling repo in the\n    monorepo layout), so Docker images and local runs stay in sync.\n    \"\"\"\n    repo_root = Path(__file__).resolve().parent",
+        "peekOfCode": "def load_autobooks_task() -> Task:\n    \"\"\"\n    Backwards-compatible helper returning the first Autobooks task.\n    Prefer using load_autobooks_tasks() when you need explicit control\n    over which task(s) are evaluated.\n    \"\"\"\n    tasks = load_autobooks_tasks()\n    return tasks[0]",
         "detail": "utils",
         "documentation": {}
     }

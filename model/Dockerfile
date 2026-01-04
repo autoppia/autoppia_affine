@@ -6,7 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY autoppia_affine /app/autoppia_affine
+# Build context is autoppia_affine/, so copy everything under it
+COPY . /app/autoppia_affine
 
 RUN pip install --no-cache-dir fastapi uvicorn pydantic httpx
 

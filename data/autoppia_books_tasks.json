@@ -20,7 +20,24 @@
       "relevant_data": {
         "note": "This is a hand-crafted task used only to verify the benchmark plumbing with a fixed agent."
       }
+    },
+    {
+      "id": "autobooks-demo-task-2-invalid",
+      "is_web_real": false,
+      "web_project_id": "autobooks",
+      "url": "/",
+      "prompt": "Trigger an event that the fixed model will never produce.",
+      "tests": [
+        {
+          "type": "CheckEventTest",
+          "event_name": "NON_EXISTENT_EVENT",
+          "event_criteria": {},
+          "description": "This event is intentionally impossible for the fixed model, so the score should be 0."
+        }
+      ],
+      "relevant_data": {
+        "note": "Second demo task used to verify that an unsolved task yields raw_score=0.0."
+      }
     }
   ]
 }
-

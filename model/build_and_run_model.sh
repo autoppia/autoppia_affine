@@ -5,6 +5,7 @@ IMAGE_NAME="autoppia-affine-model:latest"
 CONTAINER_NAME="autoppia-affine-model"
 NETWORK_NAME="autoppia-affine-net"
 
+# Build context root is the autoppia_affine directory
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "[model] Using build context root: ${ROOT_DIR}"
@@ -17,7 +18,7 @@ fi
 
 echo "[model] Building image ${IMAGE_NAME}"
 docker build \
-  -f autoppia_affine/model/Dockerfile \
+  -f model/Dockerfile \
   -t "${IMAGE_NAME}" \
   "${ROOT_DIR}"
 
@@ -33,4 +34,3 @@ docker run -d \
   "${IMAGE_NAME}"
 
 echo "[model] Container running inside Docker network ${NETWORK_NAME} (no host port binding)."
-

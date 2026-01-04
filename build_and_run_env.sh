@@ -5,6 +5,7 @@ IMAGE_NAME="autoppia-affine-env:latest"
 CONTAINER_NAME="autoppia-affine-env"
 NETWORK_NAME="autoppia-affine-net"
 
+# Build context root is the monorepo root (one level up from autoppia_affine)
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "[env] Using build context root: ${ROOT_DIR}"
@@ -17,7 +18,7 @@ fi
 
 echo "[env] Building image ${IMAGE_NAME}"
 docker build \
-  -f autoppia_affine/Dockerfile.env \
+  -f autoppia_affine/Dockerfile \
   -t "${IMAGE_NAME}" \
   "${ROOT_DIR}"
 
@@ -30,8 +31,7 @@ echo "[env] Starting container ${CONTAINER_NAME} on network ${NETWORK_NAME}"
 docker run -d \
   --name "${CONTAINER_NAME}" \
   --network "${NETWORK_NAME}" \
-  -p 8000:8000 \
+  -p 8002:8000 \
   "${IMAGE_NAME}"
 
-echo "[env] Container running. Health check: curl http://localhost:8000/health"
-
+echo "[env] Container running. Health check: curl http://localhost:8002/health"
