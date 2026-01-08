@@ -52,7 +52,14 @@ _max_steps = _get_default_max_steps()
 
 class EvaluateRequest(BaseModel):
     model: str = Field(..., description="Model identifier")
-    base_url: HttpUrl = Field(..., description="Base URL of model /act API")
+    base_url: HttpUrl = Field(
+        ...,
+        description=(
+            "Full URL of the miner's action endpoint. "
+            "This is the URL that will be POSTed to on each step "
+            "(for example: http://miner-host:9000/act)."
+        ),
+    )
     task_id: str | None = Field(
         default=None,
         description="If set, evaluate only this task id.",
@@ -125,7 +132,10 @@ def _evaluate_task_with_remote_agent_sync(
             }
 
             try:
-                resp = session.post(f"{model_base_url.rstrip('/')}/act", json=payload)
+                # Treat model_base_url as the full endpoint URL (no extra suffix),
+                # so that its format matches how other Affinetes environments
+                # pass base_url around.
+                resp = session.post(model_base_url, json=payload)
                 resp.raise_for_status()
                 resp_data = resp.json()
             except Exception as exc:

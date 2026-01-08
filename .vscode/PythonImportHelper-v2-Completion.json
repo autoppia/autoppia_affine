@@ -303,7 +303,7 @@
         "kind": 6,
         "importPath": "env",
         "description": "env",
-        "peekOfCode": "class EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(..., description=\"Base URL of model /act API\")\n    task_id: str | None = Field(\n        default=None,\n        description=\"If set, evaluate only this task id.\",\n    )\n    max_steps: int | None = Field(\n        None,\n        description=\"Max environment steps per task (defaults to config).\",",
+        "peekOfCode": "class EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(\n        ...,\n        description=(\n            \"Full URL of the miner's action endpoint. \"\n            \"This is the URL that will be POSTed to on each step \"\n            \"(for example: http://miner-host:9000/act).\"\n        ),\n    )",
         "detail": "env",
         "documentation": {}
     },
@@ -348,7 +348,7 @@
         "kind": 5,
         "importPath": "env",
         "description": "env",
-        "peekOfCode": "_max_steps = _get_default_max_steps()\n# --------------------------------------------------------------------------- #\n# Models\n# --------------------------------------------------------------------------- #\nclass EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(..., description=\"Base URL of model /act API\")\n    task_id: str | None = Field(\n        default=None,\n        description=\"If set, evaluate only this task id.\",",
+        "peekOfCode": "_max_steps = _get_default_max_steps()\n# --------------------------------------------------------------------------- #\n# Models\n# --------------------------------------------------------------------------- #\nclass EvaluateRequest(BaseModel):\n    model: str = Field(..., description=\"Model identifier\")\n    base_url: HttpUrl = Field(\n        ...,\n        description=(\n            \"Full URL of the miner's action endpoint. \"",
         "detail": "env",
         "documentation": {}
     },
@@ -366,7 +366,7 @@
         "kind": 2,
         "importPath": "test_affine_env_with_miner",
         "description": "test_affine_env_with_miner",
-        "peekOfCode": "def main() -> None:\n    env_url = \"http://localhost:8002\"\n    model_base_url_for_env = \"http://autoppia-affine-model:9000\"\n    print(f\"[test] Waiting for env at {env_url}/health\")\n    wait_for_health(f\"{env_url}/health\")\n    def run_eval(task_id: str) -> dict:\n        print(f\"[test] Calling /evaluate for task_id={task_id}\")\n        resp = httpx.post(\n            f\"{env_url}/evaluate\",\n            json={",
+        "peekOfCode": "def main() -> None:\n    env_url = \"http://localhost:8002\"\n    # Full URL of the model's action endpoint\n    model_base_url_for_env = \"http://autoppia-affine-model:9000/act\"\n    print(f\"[test] Waiting for env at {env_url}/health\")\n    wait_for_health(f\"{env_url}/health\")\n    def run_eval(task_id: str) -> dict:\n        print(f\"[test] Calling /evaluate for task_id={task_id}\")\n        resp = httpx.post(\n            f\"{env_url}/evaluate\",",
         "detail": "test_affine_env_with_miner",
         "documentation": {}
     },

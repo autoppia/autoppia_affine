@@ -6,7 +6,7 @@ Affinetes compatibility test for the Autoppia IWA env.
 This test assumes:
 - The env container is already running on http://localhost:8002
 - The model container is running and reachable from the env as
-  http://autoppia-affine-model:9000
+  http://autoppia-affine-model:9000/act
 - The local Python environment has `affinetes` installed, e.g.:
     cd ../affinetes && pip install -e .
 """
@@ -51,7 +51,8 @@ def wait_for_health(url: str, timeout_s: float = 60.0) -> None:
 
 async def main() -> None:
     env_url = "http://localhost:8002"
-    model_base_url_for_env = "http://autoppia-affine-model:9000"
+    # Full URL of the model's action endpoint
+    model_base_url_for_env = "http://autoppia-affine-model:9000/act"
 
     print(f"[affinetes-test] Waiting for env at {env_url}/health")
     wait_for_health(f"{env_url}/health")
@@ -110,4 +111,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-

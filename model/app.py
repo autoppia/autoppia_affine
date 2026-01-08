@@ -40,7 +40,7 @@ def act(req: ActRequest) -> ActResponse:
         actions=[
             {
                 "type": "NavigateAction",
-                "url": "http://84.247.180.192:8001/books/book-original-002?seed=36",
+                "url": "http://localhost:8001/books/book-1?seed=1",
             }
         ],
         done=True,

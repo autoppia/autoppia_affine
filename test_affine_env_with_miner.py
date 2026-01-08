@@ -25,7 +25,8 @@ def wait_for_health(url: str, timeout_s: float = 60.0) -> None:
 
 def main() -> None:
     env_url = "http://localhost:8002"
-    model_base_url_for_env = "http://autoppia-affine-model:9000"
+    # Full URL of the model's action endpoint
+    model_base_url_for_env = "http://autoppia-affine-model:9000/act"
 
     print(f"[test] Waiting for env at {env_url}/health")
     wait_for_health(f"{env_url}/health")

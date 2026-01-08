@@ -16,4 +16,4 @@ EXPOSE 9000
 ENV PYTHONPATH=/app/autoppia_affine
 WORKDIR /app/autoppia_affine
 
-CMD ["uvicorn", "model.app:app", "--host", "0.0.0.0", "--port", "9000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "9000"]

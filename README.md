@@ -1,145 +1,222 @@
 # Autoppia Affine
 
-Affine‑compatible evaluation harness for the Autoppia IWA web‑agent benchmark.
+Affine-compatible evaluation harness for the Autoppia IWA web-agent benchmark.
 
-This repo gives you a small, self‑contained environment that Affine can use to
-evaluate web agents. It exposes a single `/evaluate` HTTP endpoint (inside a
-Docker container) that an Affine validator calls, pointing it to a miner/model
-URL. Under the hood it runs the real Autoppia IWA benchmark
-(`StatefulEvaluator`) against that model.
+This repo provides a **self-contained** Docker environment that Affine can use to evaluate web agents. It exposes a single `/evaluate` HTTP endpoint that an Affine validator calls, pointing it to a miner/model URL. Under the hood it runs the real Autoppia IWA benchmark (`StatefulEvaluator`) against that model.
 
-Currently this environment covers a tiny slice of the Autoppia Books
-("Autobooks") website: two simple tasks, one that the reference model solves
-(score 1) and one that it intentionally fails (score 0).
+## Architecture
 
-In other words: this repo is a minimal, working example of “IWA as an Affine
-environment”.
+The environment uses the **DOOD (Docker-out-of-Docker)** pattern:
 
-## What’s inside
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Host Docker Daemon (via /var/run/docker.sock)                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────────┐    ┌─────────────────────────────────┐ │
+│  │ autoppia-affine-env │    │ Sibling Containers              │ │
+│  │ (main container)    │    │                                 │ │
+│  │                     │    │  - autoppia-webs-server:8080    │ │
+│  │  - FastAPI :8000    │◄──►│  - autoppia-webs-postgres       │ │
+│  │  - Port forwarding  │    │  - autoppia-web-autobooks:8001  │ │
+│  │  - Playwright       │    │                                 │ │
+│  └─────────────────────┘    └─────────────────────────────────┘ │
+│                                                                 │
+│  Network: autoppia-net (internal, isolated)                     │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-- `env.py` – FastAPI environment:
-  - Exposes `/health` and `/evaluate`.
-  - Wraps the Autoppia IWA `StatefulEvaluator`.
-- `model/app.py` – tiny reference model:
-  - Exposes `/health` and `/act`.
-  - Always returns a single `NavigateAction` that solves the first Autobooks task.
-- `data/autoppia_books_tasks.json` – two Autobooks tasks:
-  - Task 1: expected to succeed (BOOK_DETAIL event, score 1.0).
-  - Task 2: expected to fail (impossible event, score 0.0).
-- Dockerfiles + helper scripts:
-  - Build and run the env and model containers.
-  - Run an end‑to‑end test that checks you get scores 1.0 and 0.0.
+**Key features:**
+- All demo websites run as sibling containers (not nested)
+- Port forwarding via `socat` routes localhost → Docker containers
+- Network isolation: websites only accessible within Docker network
+- Main container exposes only port 8000 to host
 
-## How `/evaluate` works (env flow)
+## Quick Start
 
-At a high level, the `/evaluate` endpoint does this:
+### Prerequisites
 
-1. **Load tasks**
-   - Read all Autobooks tasks from `data/autoppia_books_tasks.json`.
-   - Optionally filter to a single `task_id` if the request specifies one.
+- Docker installed and running
+- Docker socket accessible at `/var/run/docker.sock`
 
-2. **Set up the evaluator**
-   - For each selected task, create a `StatefulEvaluator`.
-   - Call `reset()` once:
-     - Opens the task’s starting page in a headless browser.
-     - Returns the initial web state (URL, HTML snapshot and initial score).
+### Build and Run
 
-3. **Step the model**
-   - For each environment step (up to `max_steps`):
-     - Build a JSON request for the model’s `/act` endpoint containing:
-       - Current URL.
-       - Current HTML snapshot.
-       - Task metadata (prompt, task id, project id).
-       - `step_index`.
-       - Optional history and other context.
-     - Call the miner/model at its `/act` URL (provided to `/evaluate` as `base_url`).
-     - The model must respond with:
-       - `{"actions": [ { "type": "...Action", ... }, ... ]}`.
-     - For each action dict:
-       - Convert it to a real IWA action using `BaseAction.create_action(...)`.
-     - Execute the first valid action (or a NOOP if there are none) via
-       `StatefulEvaluator.step(...)`.
-     - This yields:
-       - Updated score (tests passed, total tests, raw score, success flag).
-       - New web state (URL and HTML).
-     - Stop early if the task is marked successful or `max_steps` is reached.
+```bash
+# Clone if needed
+cd autoppia_affine
 
-4. **Return metrics**
-   - After all selected tasks finish, `/evaluate` returns:
-     - `environment` – string identifier of this env.
-     - `total_score` – sum of per‑task scores.
-     - `success_rate` – fraction of tasks that succeeded.
-     - `details` – one entry per task:
-       - `task_id`, `project_id`.
-       - `score` and `raw_score`.
-       - `success` (bool).
-       - `tests_passed`, `total_tests`.
-       - `steps` taken.
+# One-command build, run, and test
+./test_local.sh all
 
-## Layout
+# Or step by step:
+./test_local.sh build   # Build the Docker image
+./test_local.sh run     # Start the container
+./test_local.sh test    # Test the endpoints
+./test_local.sh clean   # Cleanup all containers
+```
+
+### Manual Docker Commands
+
+```bash
+# Build from monorepo root
+docker build -t autoppia-affine-env -f autoppia_affine/Dockerfile .
+
+# Run with Docker socket mounted
+docker run -d \
+  --name autoppia-affine-env \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -p 8000:8000 \
+  autoppia-affine-env
+
+# Check logs
+docker logs -f autoppia-affine-env
+
+# Test health endpoint
+curl http://localhost:8000/health
+
+# Cleanup
+docker rm -f autoppia-affine-env autoppia-web-autobooks autoppia-webs-server autoppia-webs-postgres
+docker network rm autoppia-net
+```
+
+## How `/evaluate` Works
+
+1. **Load tasks** from `data/autoppia_books_tasks.json`
+2. **Set up evaluator** - create `StatefulEvaluator` per task
+3. **Step the model** - for each step (up to `max_steps`):
+   - Send current state (URL, HTML) to miner's `/act` endpoint
+   - Execute returned actions via browser
+   - Check if task completed
+4. **Return metrics** - total score, success rate, per-task details
+
+### Request Format
+
+```json
+POST /evaluate
+{
+  "model": "your-model-name",
+  "base_url": "http://your-miner:9000/act",
+  "task_id": "autobooks-demo-task-1",  // optional
+  "max_steps": 30  // optional
+}
+```
+
+### Response Format
+
+```json
+{
+  "environment": "autoppia_affine_env",
+  "total_score": 1.0,
+  "success_rate": 1.0,
+  "evaluated": 1,
+  "details": [{
+    "task_id": "autobooks-demo-task-1",
+    "project_id": "autobooks",
+    "score": 1.0,
+    "raw_score": 1.0,
+    "success": true,
+    "tests_passed": 1,
+    "total_tests": 1,
+    "steps": 1
+  }]
+}
+```
+
+## File Structure
 
 ```
 autoppia_affine/
-├── env.py                       # FastAPI HTTP env exposing /evaluate
-├── model/                       # Hardcoded Autobooks model (/act)
-│   ├── app.py
-│   ├── Dockerfile               # Model container
-│   ├── build_and_run_model.sh   # Build & run model container
-│   └── __init__.py
-├── Dockerfile                   # Env container (StatefulEvaluator + FastAPI)
-├── build_and_run_env.sh         # Build & run env container
-├── test_affine_env_with_miner.py  # Local integration test
+├── Dockerfile                    # Main container (self-contained)
+├── entrypoint.sh                 # Startup script (spawns demo webs)
+├── docker-compose.webs.yml       # Demo website containers
+├── env.py                        # FastAPI /evaluate endpoint
+├── utils.py                      # Task loading utilities
+├── test_local.sh                 # Local testing script
 ├── data/
-│   └── autoppia_books_tasks.json  # Two Autobooks tasks used by the env
+│   └── autoppia_books_tasks.json # Demo tasks
+├── model/                        # Reference model (for testing)
+│   ├── app.py
+│   ├── Dockerfile
+│   └── build_and_run_model.sh
 └── README.md
 ```
 
-## Running the Env + Model
+## Adding More Websites
 
-From the `autoppia_affine` directory (this folder), with `autoppia_iwa` services reachable:
+To add more demo websites, edit `docker-compose.webs.yml`:
 
-```bash
-# One-shot deploy + test (recommended)
-cd autoppia_affine
-bash deploy.sh
+1. Uncomment/add a new service following the template
+2. Add a port forward in `entrypoint.sh`:
+   ```bash
+   socat TCP-LISTEN:8000,fork,reuseaddr TCP:autoppia-web-autocinema:8000 &
+   ```
+3. Rebuild the image
 
-# Or run steps manually from autoppia_affine/:
-#   1) Build & run model (on Docker network autoppia-affine-net)
-#      bash model/build_and_run_model.sh
-#   2) Build & run env (FastAPI + StatefulEvaluator on host :8002 -> container :8000)
-#      bash build_and_run_env.sh
-#   3) Local smoke test (talks to http://localhost:8002)
-#      python test_affine_env_with_miner.py
+## Network Isolation
+
+- Demo websites are only accessible within the `autoppia-net` Docker network
+- Port forwarding routes `localhost:800X` → `container:800X` inside main container
+- Only port 8000 (FastAPI) is exposed to the host
+- External access to demo websites is not possible
+
+## Affinetes Integration
+
+For Affinetes URL mode:
+
+```python
+import affinetes as af
+
+env = af.load_env(
+    image="autoppia-affine-env:latest",
+    mode="docker",
+    env_vars={"CHUTES_API_KEY": api_key},
+    volumes={
+        "/var/run/docker.sock": {
+            "bind": "/var/run/docker.sock",
+            "mode": "rw"
+        }
+    },
+)
+
+result = env.evaluate(
+    model="your-model",
+    base_url="http://your-miner/act",
+)
 ```
 
-## Testing with Affinetes (URL mode)
+## Environment Variables
 
-To verify that this environment is compatible with Affinetes:
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DEMO_WEBS_ENDPOINT` | `http://localhost` | Base URL for demo websites |
+| `DEMO_WEBS_STARTING_PORT` | `8000` | Starting port for websites |
+| `DEMO_WEB_SERVICE_PORT` | `8080` | webs-server port |
+| `EVALUATOR_HEADLESS` | `true` | Run browser headless |
+| `AUTOPPIA_AFFINE_MAX_STEPS` | `30` | Default max steps per task |
 
-1. Make sure Affinetes is installed in your local Python env, for example:
+## Troubleshooting
 
+### Container won't start
 ```bash
-cd ../affinetes
-pip install -e .
+# Check if Docker socket is accessible
+docker info
+
+# Check container logs
+docker logs autoppia-affine-env
 ```
 
-2. Start the env + model as usual:
-
+### Demo websites not responding
 ```bash
-cd autoppia_affine
-bash deploy.sh
+# Check sibling containers
+docker ps --filter "name=autoppia-"
+
+# Check network
+docker network inspect autoppia-net
 ```
 
-3. Run the Affinetes URL‑mode test from `autoppia_affine`:
-
+### Port forwarding issues
 ```bash
-python test_affinetes_iwa_env.py
+# Inside the container, test connectivity
+docker exec autoppia-affine-env curl http://localhost:8001
+docker exec autoppia-affine-env curl http://localhost:8080/health
 ```
-
-This script:
-
-- Connects to `http://localhost:8002` using `affinetes.load_env(mode="url", base_url=...)`.
-- Calls `env.evaluate(...)` twice:
-  - Once on `autobooks-demo-task-1` (expects score 1.0).
-  - Once on `autobooks-demo-task-2-invalid` (expects score 0.0).
-- Prints green checks if both scores match expectations, confirming that the Autoppia IWA env works correctly as an Affinetes URL‑mode environment.

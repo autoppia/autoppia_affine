@@ -1,0 +1,146 @@
+# Docker Compose for demo websites (spawned by main affine container via DOOD)
+# This file is used by entrypoint.sh to bring up demo websites as sibling containers
+#
+# To add more websites, simply add a new service following the pattern below.
+# Available websites: web_1_autocinema, web_2_autobooks, web_3_autozone, etc.
+
+services:
+  # =============================================================================
+  # Core Services (required)
+  # =============================================================================
+
+  webs-postgres:
+    image: postgres:15-alpine
+    container_name: autoppia-webs-postgres
+    environment:
+      POSTGRES_USER: webs_user
+      POSTGRES_PASSWORD: autoppia_2025
+      POSTGRES_DB: autoppia_db
+    volumes:
+      - webs_postgres_data:/var/lib/postgresql/data
+      - ./webs_demo/webs_server/postgres/initdb.d:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webs_user -d autoppia_db -p 5432"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command: >
+      postgres
+        -c max_connections=200
+        -c shared_buffers=256MB
+        -c work_mem=16MB
+    networks:
+      - autoppia-net
+    restart: unless-stopped
+
+  webs-server:
+    image: autoppia-webs-server:latest
+    container_name: autoppia-webs-server
+    build:
+      context: ./webs_demo/webs_server
+      dockerfile: Dockerfile
+    environment:
+      LOG_LEVEL: info
+      HOST: 0.0.0.0
+      PORT: 8080
+      POSTGRES_USER: webs_user
+      POSTGRES_PASSWORD: autoppia_2025
+      POSTGRES_DB: autoppia_db
+      DB_HOST: webs-postgres
+      DB_PORT: 5432
+      DATABASE_URL: "postgresql://webs_user:autoppia_2025@webs-postgres:5432/autoppia_db"
+      DB_POOL_MIN: 5
+      DB_POOL_MAX: 20
+      GZIP_MIN_SIZE: 1000
+    depends_on:
+      webs-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - autoppia-net
+    restart: unless-stopped
+
+  # =============================================================================
+  # Demo Websites
+  # Add more websites by copying the pattern below
+  # =============================================================================
+
+  web-autobooks:
+    image: autoppia-web-autobooks:latest
+    container_name: autoppia-web-autobooks
+    build:
+      context: ./webs_demo
+      dockerfile: web_2_autobooks/Dockerfile
+      args:
+        ENABLE_DYNAMIC_V1: "false"
+        ENABLE_DYNAMIC_V2_AI_GENERATE: "false"
+        ENABLE_DYNAMIC_V2_DB_MODE: "false"
+        ENABLE_DYNAMIC_V3: "false"
+        ENABLE_DYNAMIC_V4: "false"
+        API_URL: "http://webs-server:8080"
+        NEXT_PUBLIC_API_URL: "http://webs-server:8080"
+    environment:
+      API_URL: "http://webs-server:8080"
+      NEXT_PUBLIC_API_URL: "http://webs-server:8080"
+      PORT: 8001
+      NODE_ENV: production
+    depends_on:
+      webs-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8001"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - autoppia-net
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # TEMPLATE: To add another website, copy and modify the block below
+  # ---------------------------------------------------------------------------
+  # web-autocinema:
+  #   image: autoppia-web-autocinema:latest
+  #   container_name: autoppia-web-autocinema
+  #   build:
+  #     context: ./webs_demo/web_1_autocinema
+  #     dockerfile: Dockerfile
+  #     args:
+  #       ENABLE_DYNAMIC_V1: "false"
+  #       ENABLE_DYNAMIC_V2_AI_GENERATE: "false"
+  #       ENABLE_DYNAMIC_V2_DB_MODE: "false"
+  #       ENABLE_DYNAMIC_V3: "false"
+  #       ENABLE_DYNAMIC_V4: "false"
+  #       API_URL: "http://webs-server:8080"
+  #       NEXT_PUBLIC_API_URL: "http://webs-server:8080"
+  #   environment:
+  #     API_URL: "http://webs-server:8080"
+  #     NEXT_PUBLIC_API_URL: "http://webs-server:8080"
+  #     PORT: 8000
+  #     NODE_ENV: production
+  #   depends_on:
+  #     webs-server:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 10
+  #     start_period: 60s
+  #   networks:
+  #     - autoppia-net
+  #   restart: unless-stopped
+
+volumes:
+  webs_postgres_data:
+
+networks:
+  autoppia-net:
+    name: autoppia-net
+    external: true
