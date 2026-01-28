@@ -71,6 +71,7 @@ import affinetes as af
 env = af.load_env(
     image="autoppia-affine-env:latest",
     mode="docker",
+    env_type="http_based",
     env_vars={"CHUTES_API_KEY": api_key},
     force_recreate=True,
     cleanup=False,
