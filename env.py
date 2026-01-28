@@ -17,37 +17,18 @@ from utils import load_autobooks_tasks
 app = FastAPI(title="Autoppia Affine Environment", version="0.1.0")
 
 
-# --------------------------------------------------------------------------- #
-# Environment wiring (minimal: only evaluator limits)
-# --------------------------------------------------------------------------- #
-
 _DEFAULT_MAX_STEPS = 30
 
 
 def _get_default_max_steps() -> int:
-    """
-    Resolve the default max_steps for evaluations.
-
-    Precedence:
-      1. AUTOPPIA_AFFINE_MAX_STEPS env var (must be positive int)
-      2. Hard-coded default of 30
-    """
-    raw = os.getenv("AUTOPPIA_AFFINE_MAX_STEPS")
-    if not raw:
-        return _DEFAULT_MAX_STEPS
-    try:
-        value = int(raw)
-        return value if value > 0 else _DEFAULT_MAX_STEPS
-    except Exception:
-        return _DEFAULT_MAX_STEPS
+    """Resolve max_steps from env var or use default of 30."""
+    raw = os.getenv("AUTOPPIA_AFFINE_MAX_STEPS", "")
+    if raw.isdigit() and int(raw) > 0:
+        return int(raw)
+    return _DEFAULT_MAX_STEPS
 
 
 _max_steps = _get_default_max_steps()
-
-
-# --------------------------------------------------------------------------- #
-# Models
-# --------------------------------------------------------------------------- #
 
 
 class EvaluateRequest(BaseModel):
@@ -89,24 +70,13 @@ class EvaluateResponse(BaseModel):
     details: List[TaskEvaluationDetail]
 
 
-# --------------------------------------------------------------------------- #
 def _evaluate_task_with_remote_agent_sync(
     task: Task,
     model_base_url: str,
     web_agent_name: str,
     max_steps: int,
 ) -> TaskEvaluationDetail:
-    """
-    Drive a remote step-based model using StatefulEvaluator.
-
-    The model is expected to implement the same JSON contract used by
-    ApifiedWebCUA /act:
-      - {"actions": [ { "type": "...Action", ... }, ... ]}
-
-    We use a fixed web_agent_id so backend events (e.g., BOOK_DETAIL) are
-    grouped consistently in the demo webs service, mirroring the
-    FixedAutobooksAgent wiring.
-    """
+    """Drive a remote step-based model using StatefulEvaluator."""
     evaluator = StatefulEvaluator(task=task, web_agent_id="1")
     step_index = 0
     score = ScoreDetails()
@@ -132,9 +102,6 @@ def _evaluate_task_with_remote_agent_sync(
             }
 
             try:
-                # Treat model_base_url as the full endpoint URL (no extra suffix),
-                # so that its format matches how other Affinetes environments
-                # pass base_url around.
                 resp = session.post(model_base_url, json=payload)
                 resp.raise_for_status()
                 resp_data = resp.json()
@@ -167,6 +134,12 @@ def _evaluate_task_with_remote_agent_sync(
                 step_result = evaluator.step(None)
             else:
                 step_result = evaluator.step(base_action)
+                # Wait for page JavaScript to execute and record events
+                import time
+                time.sleep(3.0)
+                # Re-check score after wait (events may have been recorded)
+                score = evaluator.get_score_details()
+                step_result = type(step_result)(score=score, snapshot=step_result.snapshot, action_result=step_result.action_result)
 
             score = step_result.score
             snapshot = step_result.snapshot
@@ -200,11 +173,6 @@ def _evaluate_task_with_remote_agent_sync(
         evaluator.close()
 
 
-# --------------------------------------------------------------------------- #
-# FastAPI endpoints
-# --------------------------------------------------------------------------- #
-
-
 @app.get("/health")
 async def health() -> Dict[str, str]:
     return {"status": "ok"}
@@ -212,12 +180,7 @@ async def health() -> Dict[str, str]:
 
 @app.post("/evaluate", response_model=EvaluateResponse)
 async def evaluate(request: EvaluateRequest) -> EvaluateResponse:
-    """
-    Evaluate a remote step-based agent on one or more IWA tasks.
-
-    For now this uses the single Autobooks demo task, but the interface
-    is prepared for multiple tasks.
-    """
+    """Evaluate a remote step-based agent on one or more IWA tasks."""
     max_steps = int(request.max_steps or _max_steps)
     if max_steps <= 0:
         raise HTTPException(
@@ -225,14 +188,13 @@ async def evaluate(request: EvaluateRequest) -> EvaluateResponse:
 
     try:
         tasks = load_autobooks_tasks()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Failed to load Autobooks task")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     if not tasks:
         raise HTTPException(status_code=500, detail="No tasks available for evaluation")
 
-    # Optional filtering by task_id so tests can request specific tasks.
     if request.task_id is not None:
         filtered = [t for t in tasks if t.id == request.task_id]
         if not filtered:
@@ -242,11 +204,7 @@ async def evaluate(request: EvaluateRequest) -> EvaluateResponse:
             )
         tasks = filtered
 
-    # Run the evaluator + model loop in a worker thread so that the
-    # internal event loop used by StatefulEvaluator does not conflict
-    # with the FastAPI/uvicorn asyncio loop.
     import asyncio
-
     loop = asyncio.get_running_loop()
     details: List[TaskEvaluationDetail] = []
     for task in tasks:

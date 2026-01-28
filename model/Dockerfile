@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir fastapi uvicorn pydantic httpx
 
 EXPOSE 9000
 
-ENV PYTHONPATH=/app/autoppia_affine
-WORKDIR /app/autoppia_affine
+ENV PYTHONPATH=/app/autoppia_affine/model
+WORKDIR /app/autoppia_affine/model
 
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "9000"]

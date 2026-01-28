@@ -7,7 +7,7 @@
       "id": "autobooks-demo-task-1",
       "is_web_real": false,
       "web_project_id": "autobooks",
-      "url": "/",
+      "url": "http://localhost:8001/?seed=1&web_agent_id=1&validator_id=1",
       "prompt": "Open any book detail page in the Autoppia Books app and stop there.",
       "tests": [
         {
@@ -25,7 +25,7 @@
       "id": "autobooks-demo-task-2-invalid",
       "is_web_real": false,
       "web_project_id": "autobooks",
-      "url": "/",
+      "url": "http://localhost:8001/?seed=1&web_agent_id=1&validator_id=1",
       "prompt": "Trigger an event that the fixed model will never produce.",
       "tests": [
         {

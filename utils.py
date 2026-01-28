@@ -8,16 +8,7 @@ from autoppia_iwa.src.data_generation.tasks.classes import Task
 
 
 def _resolve_autobooks_tasks_path() -> Path:
-    """
-    Resolve the path to the Autobooks tasks JSON file, copying it locally if needed.
-
-    Canonical location is inside this repo under:
-        data/autoppia_books_tasks.json
-
-    If that file is missing, we try to copy it once from the autoppia_iwa
-    repo (either the installed package data tree or a sibling repo in the
-    monorepo layout), so Docker images and local runs stay in sync.
-    """
+    """Resolve the path to Autobooks tasks JSON file, copying from autoppia_iwa if needed."""
     repo_root = Path(__file__).resolve().parent
     local_tasks_path = repo_root / "data" / "autoppia_books_tasks.json"
 
@@ -72,7 +63,7 @@ def _resolve_autobooks_tasks_path() -> Path:
                 source_path.read_text(encoding="utf-8"),
                 encoding="utf-8",
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise RuntimeError(
                 f"Failed to copy Autobooks tasks file to {local_tasks_path}: {exc}",
             ) from exc
@@ -83,13 +74,7 @@ def _resolve_autobooks_tasks_path() -> Path:
 
 
 def load_autobooks_tasks() -> list[Task]:
-    """
-    Load all Autobooks demo tasks defined in the local JSON file.
-
-    This now supports multiple tasks so that different task IDs can be
-    evaluated independently (e.g. one that the fixed model solves, and
-    another that it does not).
-    """
+    """Load all Autobooks demo tasks from JSON file."""
     tasks_path = _resolve_autobooks_tasks_path()
     data = json.loads(tasks_path.read_text(encoding="utf-8"))
     raw_tasks = data.get("tasks", [])
@@ -113,12 +98,6 @@ def load_autobooks_tasks() -> list[Task]:
 
 
 def load_autobooks_task() -> Task:
-    """
-    Backwards-compatible helper returning the first Autobooks task.
-
-    Prefer using load_autobooks_tasks() when you need explicit control
-    over which task(s) are evaluated.
-    """
-    tasks = load_autobooks_tasks()
-    return tasks[0]
+    """Return the first Autobooks task (backwards-compatible helper)."""
+    return load_autobooks_tasks()[0]
 
